@@ -6,6 +6,7 @@ from io import BytesIO
 from reportlab.lib.pagesizes import LETTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+import re
 
 # Directories and file paths
 THIS_DIR = Path(__file__).parent
@@ -23,6 +24,22 @@ HEADERS = {
 # Apply custom CSS
 with open(CSS_FILE) as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+def clean_hesitations(text):
+    FILLERS = ["uh", "um", "hmm"]
+    for filler in FILLERS:
+        # Remove filler with optional trailing comma/period
+        pattern = r'\b' + re.escape(filler) + r'[.,]?\b'
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+
+    # Remove extra spaces and fix space before punctuation
+    text = re.sub(r'\s{2,}', ' ', text)
+    text = re.sub(r'\s+([.,!?])', r'\1', text)
+
+    # Handle leftover commas at beginning of sentences
+    text = re.sub(r'^,\s*', '', text)
+
+    return text.strip()
 
 def create_pdf(text: str) -> BytesIO:
     buffer = BytesIO()
@@ -116,26 +133,27 @@ def setup_sanitize_download(sub_path):
             st.stop()
 
         if cleaned_text:
-            st.text_area("Cleaned Subtitles", cleaned_text, height=300)
+            filtered_text = clean_hesitations(cleaned_text)
+            st.text_area("Cleaned Subtitles", filtered_text, height=300)
 
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.download_button(
                     "Download as TXT",
-                    cleaned_text,
+                    filtered_text,
                     file_name="subtitles.txt"
                 )
             with col2:
                 st.download_button(
                     "Download as DOCX",
-                    create_docx(cleaned_text),
+                    create_docx(filtered_text),
                     file_name="subtitles.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
             with col3:
                 st.download_button(
                     "Download as PDF",
-                    create_pdf(cleaned_text),
+                    create_pdf(filtered_text),
                     file_name="subtitles.pdf",
                     mime="application/pdf"
                 )
