@@ -82,14 +82,14 @@ def sanitize_vtt(filename):
     return " ".join(cleaned_lines)
 
 def download_subtitles_file(full_url):
-    response = requests.get(full_url, HEADERS)
-
+    response = requests.get(full_url, headers=HEADERS)
     if response.status_code == 200:
         with open(FILENAME, 'wb') as file:
             file.write(response.content)
-        print(f"File downloaded successfully as '{FILENAME}'")
+        return True
     else:
-        print(f"Failed to download. Status code: {response.status_code}")
+        st.error(f"Failed to download file. Status code: {response.status_code}")
+        return False
 
 def setup_interface():
     st.markdown("""
@@ -109,7 +109,12 @@ def setup_sanitize_download(sub_path):
 
         full_url = BASE_URL + sub_path
         download_subtitles_file(full_url)
-        cleaned_text = sanitize_vtt(FILENAME)
+
+        if download_subtitles_file(full_url):
+            cleaned_text = sanitize_vtt(FILENAME)
+        else:
+            st.stop()
+
         if cleaned_text:
             st.text_area("Cleaned Subtitles", cleaned_text, height=300)
 
