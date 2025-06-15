@@ -1,0 +1,6 @@
+streamlit==1.29.0
+streamlit_extras==0.3.6
+streamlit_lottie==0.0.5
+requests==2.32.4
+python-docx==1.1.2
+reportlab==4.4.1
